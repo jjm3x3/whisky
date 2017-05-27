@@ -45,45 +45,5 @@ fn handle_client(mut stream: TcpStream) {
         Err(e) => println!("The request is not in utf8: {}", e)
     };
 
-    
-    // let mut aCollection: Vec<u8> = Vec::new();
-    // for b in stream.bytes() {
-    //     match b {
-    //         Ok(b) => { aCollection.push(b)  },
-    //         Err(e) => {
-    //             match e.kind() {
-    //                 std::io::ErrorKind::WouldBlock => {
-    //                     println!("would have blocked ");
-    //                     break
-    //                 },
-    //                 _ => panic!("somhow a non byte came through: {}", e)
-    //             }
-    //         }
-    //     };
-
-    //     // println!("Here is a byte: {:?}", abyte as char)
-    // }
-
-    // let aCollection: Vec<std::io::Result<u8>>  = stream.bytes().collect();
-    // println!("what does this look like?: {:?}", aCollection);
-
-    // let aCollection: Vec<u8> = stream.bytes().map(|x| {
-    //     match x {
-    //         Ok(b) => b,
-    //         Err(e) => {
-    //             match e.kind() {
-    //                 std::io::ErrorKind::WouldBlock => {
-    //                     println!("would have blocked ")
-    //                 },
-    //                 _ => panic!("somhow a non byte came through: {}", e)
-    //             }
-    //             0
-    //         }
-    //     }
-    // }).collect();
-    // println!("what does this look like?: {:?}", aCollection);
-
-    // let string_request = std::str::from_utf8(&aCollection);
-    // println!("Here is the message recived: '{:?}'", string_request);
-
+    stream.write(b"404 page not found");
 }

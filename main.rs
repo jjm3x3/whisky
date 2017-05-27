@@ -25,48 +25,44 @@ fn main () {
 
 fn handle_client(mut stream: TcpStream) {
     println!("handling request");
-    // let mut request = Vec::new();
-    // match stream.read_to_end(&mut request) {
-    //     Ok(bytes_read) => println!("We have read {} bytes", bytes_read),
-    //     Err(e) => println!("There was an error reading clients message: {}", e)
-    // }
-    // let string_request = String::from_utf8(request);
-
-    // match string_request {
-    //     Ok(sr) => println!("Here is the message we recived {:?}", sr),
-    //     Err(e) => println!("The request is not in utf8: {}", e)
-    // };
-
-    // let mut request = [0; 10];
-    // match stream.read(&mut request) {
-    //     Ok(bytes_read) =>  println!("We have read {} bytes", bytes_read),
-    //     Err(e) => println!("There was an error reading clients message: {}", e)
-    // }
-
-    // let string_request = std::str::from_utf8(&request);
-    // println!("Here is the message recived: '{:?}'", string_request);
-
-    // IDK why this doesn't work lazily but ittreating does
-    // println!("How many bytes? {}", stream.bytes().count())
-    
     stream.set_read_timeout(Some(Duration::from_millis(1)));
-    let mut aCollection: Vec<u8> = Vec::new();
-    for b in stream.bytes() {
-        match b {
-            Ok(b) => { aCollection.push(b)  },
-            Err(e) => {
-                match e.kind() {
-                    std::io::ErrorKind::WouldBlock => {
-                        println!("would have blocked ");
-                        break
-                    },
-                    _ => panic!("somhow a non byte came through: {}", e)
-                }
+    let mut request = Vec::new();
+    match stream.read_to_end(&mut request) {
+        Ok(bytes_read) => println!("We have read {} bytes", bytes_read),
+        Err(e) => {
+            match e.kind() {
+                std::io::ErrorKind::WouldBlock => {
+                    println!("would have blocked ");
+                },
+                _ => panic!("somhow a non byte came through: {}", e)
             }
-        };
-
-        // println!("Here is a byte: {:?}", abyte as char)
+        }
     }
+    let string_request = String::from_utf8(request);
+
+    match string_request {
+        Ok(sr) => println!("Here is the message we recived {:?}", sr),
+        Err(e) => println!("The request is not in utf8: {}", e)
+    };
+
+    
+    // let mut aCollection: Vec<u8> = Vec::new();
+    // for b in stream.bytes() {
+    //     match b {
+    //         Ok(b) => { aCollection.push(b)  },
+    //         Err(e) => {
+    //             match e.kind() {
+    //                 std::io::ErrorKind::WouldBlock => {
+    //                     println!("would have blocked ");
+    //                     break
+    //                 },
+    //                 _ => panic!("somhow a non byte came through: {}", e)
+    //             }
+    //         }
+    //     };
+
+    //     // println!("Here is a byte: {:?}", abyte as char)
+    // }
 
     // let aCollection: Vec<std::io::Result<u8>>  = stream.bytes().collect();
     // println!("what does this look like?: {:?}", aCollection);
@@ -85,9 +81,9 @@ fn handle_client(mut stream: TcpStream) {
     //         }
     //     }
     // }).collect();
-    println!("what does this look like?: {:?}", aCollection);
+    // println!("what does this look like?: {:?}", aCollection);
 
-    let string_request = std::str::from_utf8(&aCollection);
-    println!("Here is the message recived: '{:?}'", string_request);
+    // let string_request = std::str::from_utf8(&aCollection);
+    // println!("Here is the message recived: '{:?}'", string_request);
 
 }

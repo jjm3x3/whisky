@@ -1,7 +1,5 @@
 use std::{thread, time};
-use std::fs::File;
 use std::io::prelude::*;
-use std::path::Path;
 use std::net::{TcpListener, TcpStream};
 
 fn main () {
@@ -10,6 +8,7 @@ fn main () {
         Ok(listener) => listener,
         Err(e) => panic!("There was an issue {}", e)
     };
+    println!("listening on port 80");
     for stream in listener.incoming() {
         match stream {
             Ok(stream) => {
@@ -23,24 +22,18 @@ fn main () {
 
 }
 
-fn handle_client(stream: TcpStream) {
+fn handle_client(mut stream: TcpStream) {
+    println!("handling request");
+    let mut request = Vec::new();
+    match stream.read_to_end(&mut request) {
+        Ok(bytes_read) => println!("We have read {} bytes", bytes_read),
+        Err(e) => println!("There was an error reading clients message: {}", e)
+    }
+    let string_request = String::from_utf8(request);
+    println!("Here is the message recived: '{:?}'", string_request);
     let ten_millis = time::Duration::from_millis(1000);
-    //let now = time::Instant::now();
-    println!("started");
-    let path = Path::new("foo.txt");
-    // does not open in append mode
-    let mut file = match File::create(&path) {
-        Err(why) => panic!("Couldn't read file: {}", why),
-        Ok(f) => f
-    };
     for i in 0..10 {
         thread::sleep(ten_millis);
-        match file.write_all(b"Woke up for a sec\n") {
-            Ok(worked) => worked,
-            Err(why) => panic!("Couldn't write to file: {}", why)
-                
-        };
         println!("wake up check number {}", i);
     }
-    // println!("Do something with a steam")
 }

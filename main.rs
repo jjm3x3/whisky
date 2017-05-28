@@ -60,7 +60,13 @@ fn handle_client(mut stream: TcpStream) {
 
     let first_line = string_request.lines().nth(0);
     match first_line {
-        Some(fl) => println!("First line: '{}'", fl),
+        Some(fl) => {
+            println!("First line: '{}'", fl);
+            let parts = fl.split_whitespace();
+            for p in parts {
+                println!("Here is a part: '{}'", p)
+            }
+        },
         None => ()
     }
     for l in string_request.lines().skip(1) {

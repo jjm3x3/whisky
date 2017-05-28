@@ -45,17 +45,7 @@ impl Whisky {
                 Ok(stream) => {
                     let handlers = self.handlers.clone();
                     thread::spawn(move || {
-                        let request_context = handle_client(stream);
-                        if handlers.contains_key(&request_context.url) {
-                            println!("Found a handler");
-                            match handlers.get(&request_context.url) {
-                                Some(handler) => handler(request_context),
-                                None => println!("Something went terribly wrong getting a handler for {}", request_context.url)
-                            }
-                        } else {
-                            println!("key not found in:\n {:?}", handlers);
-                        }
-                        // println!("need to call handler for '{}'", request_context.url)
+                        handle_client(stream, handlers);
                     });
                 }
                 Err(e) => panic!("an error has occured {}", e)
@@ -121,8 +111,8 @@ impl Context {
     }
 }
 
-fn handle_client(mut stream: TcpStream) -> Context {
-    println!("handling request");
+fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
+    // println!("handling request");
     stream.set_read_timeout(Some(Duration::from_millis(1))).unwrap();
     let mut request = Vec::new();
     match stream.read_to_end(&mut request) {
@@ -145,9 +135,17 @@ fn handle_client(mut stream: TcpStream) -> Context {
     let context = Context::new(string_request);
     println!("Built context: {:?}", context);
 
-    // match stream.write(b"404 page not found") {
-    //     Ok(_/*bytew_written*/) => (),
-    //     Err(e) => println!("Error while writing result: {}", e)
-    // };
-    context
+    if handlers.contains_key(&context.url) {
+        match handlers.get(&context.url) {
+            Some(handler) => handler(context),
+            None => println!("Something went terribly wrong getting a handler for {}", context.url)
+        }
+    } else {
+        // println!("key not found in:\n {:?}", handlers);
+        match stream.write(b"404 page not found") {
+            Ok(_/*bytes_written*/) => (),
+            Err(e) => println!("Error while writing result: {}", e)
+        };
+    }
+
 }

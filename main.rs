@@ -38,17 +38,25 @@ impl Context {
         
         let first_line = request_string.lines().nth(0);
         let mut method = String::from("");
+        let mut url = String::from("");
+        let mut proto = String::from("");
         match first_line {
             Some(fl) => {
                 // println!("First line: '{}'", fl);
                 let mut parts = fl.split_whitespace();
+                // println!("how many values: {}", parts.count())
                 method = match parts.nth(0) {
                     Some(m) => String::from(m),
                     None => { println!("Request missing method"); String::from("") }
                 };
-                // for p in parts {
-                //     println!("Here is a part: '{}'", p)
-                // }
+                url = match parts.nth(0) {
+                    Some(u) => String::from(u),
+                    None => { println!("Request missing url"); String::from("") }
+                };
+                proto = match parts.nth(0) {
+                    Some(p) => { println!("What am I seeing here? {}", p); String::from(p) },
+                    None => { println!("Request missing protocol"); String::from("") }
+                };
             },
             None => ()
         }
@@ -58,8 +66,8 @@ impl Context {
         Context {
             headers: std::collections::HashMap::new(),
             method: method,
-            url: String::from(""),
-            protocol: String::from(""),
+            url: url,
+            protocol: proto,
         }
     }
 }

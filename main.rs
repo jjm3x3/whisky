@@ -4,21 +4,27 @@ use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use std::time::Duration;
 use std::string::String;
+use std::collections::HashMap;
 
 fn main () {
-    let server = Whisky::new("9080");
-    server.get(move |Context| {
-        println!("I have been routed and now I just need to be handled")
-    });
+    let mut server = Whisky::new("9080");
+    server.get("ping", ping_handler);
 
     server.run()
     
 }
 
+fn ping_handler(c: Context) {
+    println!("I have been routed and now I just need to be handled")
+}
+
 struct Whisky {
     server: TcpListener,
     port: String,
+    handlers: HashMap<String, WhiskyHandler >
 }
+
+type WhiskyHandler = fn(Context) -> ();
 
 impl Whisky {
     fn new(port: &str) -> Whisky {
@@ -26,7 +32,7 @@ impl Whisky {
             Ok(listener) => listener,
             Err(e) => panic!("There was an issue {}", e)
         };
-        Whisky{server: listener, port: String::from(port)}
+        Whisky{server: listener, port: String::from(port), handlers: std::collections::HashMap::new()}
     }
 
     fn run(&self) {
@@ -43,8 +49,9 @@ impl Whisky {
         }
     }
 
-    fn get<F>(&self, f: F) where F: Fn(Context) {
-        println!("install a handler")
+    fn get(&mut self,route: &str, f: WhiskyHandler) {
+        println!("install a handler");
+        self.handlers.insert(String::from(route), f);
     }
 }
 

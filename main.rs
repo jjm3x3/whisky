@@ -7,10 +7,13 @@ use std::string::String;
 use std::collections::HashMap;
 
 fn main () {
-    let mut server = Whisky::new("9080");
-    server.get("ping", ping_handler);
-
-    server.run()
+    let server: Whisky = {
+        let mut init_server: Whisky = Whisky::new("9080");
+        init_server.get("ping", ping_handler);
+        init_server
+    };
+    let setup_server: Whisky = server;
+    setup_server.run()
     
 }
 
@@ -35,13 +38,13 @@ impl Whisky {
         Whisky{server: listener, port: String::from(port), handlers: std::collections::HashMap::new()}
     }
 
-    fn run(&self) {
+    fn run<'a>(&'a self) {
         println!("listening on port {}", self.port);
         for stream in self.server.incoming() {
             match stream {
                 Ok(stream) => {
                     thread::spawn(move || {
-                        handle_client(stream);
+                        let request_context = handle_client(stream);
                     });
                 }
                 Err(e) => panic!("an error has occured {}", e)
@@ -107,7 +110,7 @@ impl Context {
     }
 }
 
-fn handle_client(mut stream: TcpStream) {
+fn handle_client(mut stream: TcpStream) -> Context {
     println!("handling request");
     stream.set_read_timeout(Some(Duration::from_millis(1))).unwrap();
     let mut request = Vec::new();
@@ -131,8 +134,9 @@ fn handle_client(mut stream: TcpStream) {
     let context = Context::new(string_request);
     println!("Built context: {:?}", context);
 
-    match stream.write(b"404 page not found") {
-        Ok(_/*bytew_written*/) => (),
-        Err(e) => println!("Error while writing result: {}", e)
-    };
+    // match stream.write(b"404 page not found") {
+    //     Ok(_/*bytew_written*/) => (),
+    //     Err(e) => println!("Error while writing result: {}", e)
+    // };
+    context
 }

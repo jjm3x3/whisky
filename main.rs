@@ -25,6 +25,13 @@ fn main () {
 
 }
 
+struct Context {
+    headers: std::collections::HashMap<String,String>,
+    method: String,
+    url: String,
+    protocol: String,
+}
+
 fn handle_client(mut stream: TcpStream) {
     println!("handling request");
     stream.set_read_timeout(Some(Duration::from_millis(1))).unwrap();

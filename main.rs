@@ -6,14 +6,32 @@ use std::time::Duration;
 use std::string::String;
 
 fn main () {
+    let server = Whisky::new("9080");
+    server.get(move |Context| {
+        println!("I have been routed and now I just need to be handled")
+    });
 
-    let listener = match TcpListener::bind("127.0.0.1:80"){
-        Ok(listener) => listener,
-        Err(e) => panic!("There was an issue {}", e)
-    };
+    server.run()
     
-    thread::spawn(move || {
-        for stream in listener.incoming() {
+}
+
+struct Whisky {
+    server: TcpListener,
+    port: String,
+}
+
+impl Whisky {
+    fn new(port: &str) -> Whisky {
+        let listener = match TcpListener::bind("127.0.0.1:".to_string() + port){
+            Ok(listener) => listener,
+            Err(e) => panic!("There was an issue {}", e)
+        };
+        Whisky{server: listener, port: String::from(port)}
+    }
+
+    fn run(&self) {
+        println!("listening on port {}", self.port);
+        for stream in self.server.incoming() {
             match stream {
                 Ok(stream) => {
                     thread::spawn(move || {
@@ -23,10 +41,11 @@ fn main () {
                 Err(e) => panic!("an error has occured {}", e)
             }
         }
-    });
-    println!("listening on port 80");
-    loop {}
+    }
 
+    fn get<F>(&self, f: F) where F: Fn(Context) {
+        println!("install a handler")
+    }
 }
 
 #[derive(Debug)]
@@ -57,7 +76,7 @@ impl Context {
                     None => { println!("Request missing url"); String::from("") }
                 };
                 proto = match parts.nth(0) {
-                    Some(p) => { println!("What am I seeing here? {}", p); String::from(p) },
+                    Some(p) => { String::from(p) },
                     None => { println!("Request missing protocol"); String::from("") }
                 };
             },

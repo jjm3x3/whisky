@@ -35,7 +35,7 @@ impl Whisky {
             Ok(listener) => listener,
             Err(e) => panic!("There was an issue {}", e)
         };
-        Whisky{server: listener, port: String::from(port), handlers: std::collections::HashMap::new()}
+        Whisky{server: listener, port: String::from(port), handlers: HashMap::new()}
     }
 
     fn run<'a>(&'a self) {
@@ -43,8 +43,11 @@ impl Whisky {
         for stream in self.server.incoming() {
             match stream {
                 Ok(stream) => {
+                    let handlers = self.handlers.clone();
                     thread::spawn(move || {
+                        handlers;
                         let request_context = handle_client(stream);
+                        println!("need to call handler for '{}'", request_context.url)
                     });
                 }
                 Err(e) => panic!("an error has occured {}", e)

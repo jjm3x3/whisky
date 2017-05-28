@@ -65,10 +65,11 @@ struct Context {
     method: String,
     url: String,
     protocol: String,
+    output: TcpStream,
 }
 
 impl Context {
-    fn new(request_string: String) -> Context {
+    fn new(request_string: String, output_stream: TcpStream) -> Context {
         
         let first_line = request_string.lines().nth(0);
         let mut method = String::from("");
@@ -107,6 +108,7 @@ impl Context {
             method: method,
             url: url,
             protocol: proto,
+            output: output_stream,
         }
     }
 }
@@ -132,7 +134,7 @@ fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>
     };
 
 
-    let context = Context::new(string_request);
+    let context = Context::new(string_request, stream);
     println!("Built context: {:?}", context);
 
     if handlers.contains_key(&context.url) {
@@ -142,7 +144,8 @@ fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>
         }
     } else {
         // println!("key not found in:\n {:?}", handlers);
-        match stream.write(b"404 page not found") {
+        let mut output = context.output;
+        match output.write(b"404 page not found") {
             Ok(_/*bytes_written*/) => (),
             Err(e) => println!("Error while writing result: {}", e)
         };

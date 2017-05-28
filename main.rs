@@ -40,6 +40,7 @@ impl Context {
         let mut method = String::from("");
         let mut url = String::from("");
         let mut proto = String::from("");
+        let mut headers = std::collections::HashMap::new();
         match first_line {
             Some(fl) => {
                 // println!("First line: '{}'", fl);
@@ -61,10 +62,19 @@ impl Context {
             None => ()
         }
         for l in request_string.lines().skip(1) {
-            // println!("{}", l);
+            if l.is_empty() {
+                continue
+            }
+            let colon_index = l.find(':').unwrap_or(l.len()-1);
+            let name = String::from(&l[..colon_index]);
+            let value = String::from(&l[colon_index+2..]);
+            headers.insert(name, value);
+            // println!("header name: '{}'", name);
+            // println!("header value: '{}'", value);
+            
         }
         Context {
-            headers: std::collections::HashMap::new(),
+            headers: headers,
             method: method,
             url: url,
             protocol: proto,

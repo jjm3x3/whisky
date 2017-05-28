@@ -11,17 +11,21 @@ fn main () {
         Ok(listener) => listener,
         Err(e) => panic!("There was an issue {}", e)
     };
-    println!("listening on port 80");
-    for stream in listener.incoming() {
-        match stream {
-            Ok(stream) => {
-                thread::spawn(move || {
-                    handle_client(stream);
-                });
+    
+    thread::spawn(move || {
+        for stream in listener.incoming() {
+            match stream {
+                Ok(stream) => {
+                    thread::spawn(move || {
+                        handle_client(stream);
+                    });
+                }
+                Err(e) => panic!("an error has occured {}", e)
             }
-            Err(e) => panic!("an error has occured {}", e)
         }
-    }
+    });
+    println!("listening on port 80");
+    loop {}
 
 }
 
@@ -43,9 +47,7 @@ impl Context {
         let mut headers = std::collections::HashMap::new();
         match first_line {
             Some(fl) => {
-                // println!("First line: '{}'", fl);
                 let mut parts = fl.split_whitespace();
-                // println!("how many values: {}", parts.count())
                 method = match parts.nth(0) {
                     Some(m) => String::from(m),
                     None => { println!("Request missing method"); String::from("") }
@@ -69,9 +71,6 @@ impl Context {
             let name = String::from(&l[..colon_index]);
             let value = String::from(&l[colon_index+2..]);
             headers.insert(name, value);
-            // println!("header name: '{}'", name);
-            // println!("header value: '{}'", value);
-            
         }
         Context {
             headers: headers,
@@ -107,7 +106,7 @@ fn handle_client(mut stream: TcpStream) {
     println!("Built context: {:?}", context);
 
     match stream.write(b"404 page not found") {
-        Ok(_/*bytew_written*/) => {},
+        Ok(_/*bytew_written*/) => (),
         Err(e) => println!("Error while writing result: {}", e)
     };
 }

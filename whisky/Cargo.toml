@@ -1,0 +1,6 @@
+[package]
+name = "whisky"
+version = "0.1.0"
+authors = ["Jacob Meixner <jjm3333@gmail.com>"]
+
+[dependencies]

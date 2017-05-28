@@ -25,11 +25,43 @@ fn main () {
 
 }
 
+#[derive(Debug)]
 struct Context {
     headers: std::collections::HashMap<String,String>,
     method: String,
     url: String,
     protocol: String,
+}
+
+impl Context {
+    fn new(request_string: String) -> Context {
+        
+        let first_line = request_string.lines().nth(0);
+        let mut method = String::from("");
+        match first_line {
+            Some(fl) => {
+                // println!("First line: '{}'", fl);
+                let mut parts = fl.split_whitespace();
+                method = match parts.nth(0) {
+                    Some(m) => String::from(m),
+                    None => { println!("Request missing method"); String::from("") }
+                };
+                // for p in parts {
+                //     println!("Here is a part: '{}'", p)
+                // }
+            },
+            None => ()
+        }
+        for l in request_string.lines().skip(1) {
+            // println!("{}", l);
+        }
+        Context {
+            headers: std::collections::HashMap::new(),
+            method: method,
+            url: String::from(""),
+            protocol: String::from(""),
+        }
+    }
 }
 
 fn handle_client(mut stream: TcpStream) {
@@ -52,26 +84,9 @@ fn handle_client(mut stream: TcpStream) {
         Err(e) => { println!("The request is not in utf8: {}", e); String::from("")}
     };
 
-    // debug output
-    // match string_request {
-    //     Ok(sr) => println!("Here is the message we recived {:?}", sr),
-    //     Err(e) => println!("The request is not in utf8: {}", e)
-    // };
 
-    let first_line = string_request.lines().nth(0);
-    match first_line {
-        Some(fl) => {
-            println!("First line: '{}'", fl);
-            let parts = fl.split_whitespace();
-            for p in parts {
-                println!("Here is a part: '{}'", p)
-            }
-        },
-        None => ()
-    }
-    for l in string_request.lines().skip(1) {
-        println!("{}", l);
-    }
+    let context = Context::new(string_request);
+    println!("Built context: {:?}", context);
 
     match stream.write(b"404 page not found") {
         Ok(_/*bytew_written*/) => {},

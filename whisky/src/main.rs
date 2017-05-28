@@ -7,18 +7,22 @@ use std::string::String;
 use std::collections::HashMap;
 
 fn main () {
-    let server: Whisky = {
+    let setup_server: Whisky = {
         let mut init_server: Whisky = Whisky::new("9080");
         init_server.get("/ping", ping_handler);
         init_server
     };
-    let setup_server: Whisky = server;
     setup_server.run()
     
 }
 
 fn ping_handler(c: Context) {
-    println!("I have been routed and now I just need to be handled")
+    println!("I have been routed and now I just need to be handled");
+    let mut output = c.output;
+    match output.write(b"{\"value\",\"pong\"}\n") {
+        Ok(_) => (),
+        Err(e) => println!("There was some issue writing a result")
+    }
 }
 
 struct Whisky {

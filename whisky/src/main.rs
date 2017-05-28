@@ -9,7 +9,7 @@ use std::collections::HashMap;
 fn main () {
     let server: Whisky = {
         let mut init_server: Whisky = Whisky::new("9080");
-        init_server.get("ping", ping_handler);
+        init_server.get("/ping", ping_handler);
         init_server
     };
     let setup_server: Whisky = server;
@@ -38,16 +38,24 @@ impl Whisky {
         Whisky{server: listener, port: String::from(port), handlers: HashMap::new()}
     }
 
-    fn run<'a>(&'a self) {
+    fn run(&self) {
         println!("listening on port {}", self.port);
         for stream in self.server.incoming() {
             match stream {
                 Ok(stream) => {
                     let handlers = self.handlers.clone();
                     thread::spawn(move || {
-                        handlers;
                         let request_context = handle_client(stream);
-                        println!("need to call handler for '{}'", request_context.url)
+                        if handlers.contains_key(&request_context.url) {
+                            println!("Found a handler");
+                            match handlers.get(&request_context.url) {
+                                Some(handler) => handler(request_context),
+                                None => println!("Something went terribly wrong getting a handler for {}", request_context.url)
+                            }
+                        } else {
+                            println!("key not found in:\n {:?}", handlers);
+                        }
+                        // println!("need to call handler for '{}'", request_context.url)
                     });
                 }
                 Err(e) => panic!("an error has occured {}", e)
@@ -122,7 +130,7 @@ fn handle_client(mut stream: TcpStream) -> Context {
         Err(e) => {
             match e.kind() {
                 ErrorKind::WouldBlock => {
-                    println!("would have blocked ");
+                    // println!("would have blocked ");
                 },
                 _ => panic!("somhow a non byte came through: {}", e)
             }

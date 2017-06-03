@@ -1,8 +1,6 @@
 use std::{thread};
-use std::io::ErrorKind;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
-use std::time::Duration;
 use std::string::String;
 use std::collections::HashMap;
 
@@ -21,7 +19,7 @@ fn ping_handler(c: Context) {
     let mut output = c.output;
     match output.write(b"{\"value\",\"pong\"}\n") {
         Ok(_) => (),
-        Err(e) => println!("There was some issue writing a result")
+        Err(e) => println!("There was some issue writing a result: {}", e)
     }
 }
 
@@ -75,6 +73,7 @@ struct Context {
 impl Context {
     fn new(request_string: String, output_stream: TcpStream) -> Context {
         
+        println!("Here is a request\n{}\nEND", request_string);
         let first_line = request_string.lines().nth(0);
         let mut method = String::from("");
         let mut url = String::from("");
@@ -117,25 +116,47 @@ impl Context {
     }
 }
 
-fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
-    // println!("handling request");
-    stream.set_read_timeout(Some(Duration::from_millis(1))).unwrap();
-    let mut request = Vec::new();
-    match stream.read_to_end(&mut request) {
-        Ok(bytes_read) => println!("We have read {} bytes", bytes_read),
-        Err(e) => {
-            match e.kind() {
-                ErrorKind::WouldBlock => {
-                    // println!("would have blocked ");
-                },
-                _ => panic!("somhow a non byte came through: {}", e)
+fn parse_header(stream: &TcpStream) -> String {
+    let mut found_crlf = 0;
+    // goes "even" "odd" depending on wether CR was the last found true (odd) or LF was found false (even)
+    let mut last_found_cr = false;
+    let mut header = Vec::new();
+        
+    for res in stream.bytes() {
+        match res {
+            Ok(b) => {
+                header.push(b);
+                if b == 13 {
+                    last_found_cr = true;
+                } else if b == 10 {
+                    if last_found_cr {
+                       found_crlf += 1;
+                    }
+                    last_found_cr = false;
+                } else {
+                    // the number of found crlfs need to be the number of consecutive crlf's
+                    found_crlf = 0;
+                    println!("Have a byte {:?}", b)
+                }
+                if found_crlf == 2 {
+                    println!("End of Header");
+                    break
+                }
             }
+            Err(e) => println!("There was an erro matchin on a byte: {}", e)
         }
     }
-    let string_request = match String::from_utf8(request){
+    let string_header = match String::from_utf8(header){
         Ok(sr) => sr,
         Err(e) => { println!("The request is not in utf8: {}", e); String::from("")}
     };
+    string_header
+
+}
+
+fn handle_client(stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
+    // println!("handling request");
+    let string_request = parse_header(&stream);
 
 
     let context = Context::new(string_request, stream);

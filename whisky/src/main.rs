@@ -123,15 +123,13 @@ fn progressive_handle(mut stream: TcpStream, handlers: HashMap<String, WhiskyHan
     let mut found_CRLF = 0;
     // goes "even" "odd" depending on wether CR was the last found true (odd) or LF was found false (even)
     let mut last_found_CR = false;
+    let mut header = Vec::new();
         
     for res in stream.bytes() {
-        println!("last_found_CR {}", last_found_CR);
+        // println!("last_found_CR {}", last_found_CR);
         match res {
             Ok(b) => {
-                if found_CRLF == 2 {
-                    println!("End of Header");
-                    break
-                }
+                header.push(b);
                 if b == 13 {
                     last_found_CR = true;
                     println!("Found CR")
@@ -142,12 +140,23 @@ fn progressive_handle(mut stream: TcpStream, handlers: HashMap<String, WhiskyHan
                     last_found_CR = false;
                     println!("Found LF")
                 } else {
-                    println!("Have a bute {:?}", b)
+                    found_CRLF = 0;
+                    println!("Have a byte {:?}", b)
+                }
+                println!("found_CRLF {}", found_CRLF);
+                if found_CRLF == 2 {
+                    println!("End of Header");
+                    break
                 }
             }
             Err(e) => println!("There was an erro matchin on a byte: {}", e)
         }
     }
+    let string_request = match String::from_utf8(header){
+        Ok(sr) => sr,
+        Err(e) => { println!("The request is not in utf8: {}", e); String::from("")}
+    };
+    println!("The wholeResquest\n{:?}\nTHEEND", string_request)
 }
 
 fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {

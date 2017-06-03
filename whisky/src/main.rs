@@ -49,7 +49,8 @@ impl Whisky {
                 Ok(stream) => {
                     let handlers = self.handlers.clone();
                     thread::spawn(move || {
-                        handle_client(stream, handlers);
+                        // handle_client(stream, handlers);
+                        progressive_handle(stream, handlers)
                     });
                 }
                 Err(e) => panic!("an error has occured {}", e)
@@ -75,6 +76,7 @@ struct Context {
 impl Context {
     fn new(request_string: String, output_stream: TcpStream) -> Context {
         
+        println!("Here is a request\n{}\nEND", request_string);
         let first_line = request_string.lines().nth(0);
         let mut method = String::from("");
         let mut url = String::from("");
@@ -113,6 +115,37 @@ impl Context {
             url: url,
             protocol: proto,
             output: output_stream,
+        }
+    }
+}
+
+fn progressive_handle(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
+    let mut found_CRLF = 0;
+    // goes "even" "odd" depending on wether CR was the last found true (odd) or LF was found false (even)
+    let mut last_found_CR = false;
+        
+    for res in stream.bytes() {
+        println!("last_found_CR {}", last_found_CR);
+        match res {
+            Ok(b) => {
+                if found_CRLF == 2 {
+                    println!("End of Header");
+                    break
+                }
+                if b == 13 {
+                    last_found_CR = true;
+                    println!("Found CR")
+                } else if b == 10 {
+                    if last_found_CR {
+                       found_CRLF += 1;
+                    }
+                    last_found_CR = false;
+                    println!("Found LF")
+                } else {
+                    println!("Have a bute {:?}", b)
+                }
+            }
+            Err(e) => println!("There was an erro matchin on a byte: {}", e)
         }
     }
 }

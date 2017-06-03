@@ -119,7 +119,7 @@ impl Context {
     }
 }
 
-fn progressive_handle(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
+fn parse_header_real(mut stream: &TcpStream) -> String {
     let mut found_CRLF = 0;
     // goes "even" "odd" depending on wether CR was the last found true (odd) or LF was found false (even)
     let mut last_found_CR = false;
@@ -156,10 +156,12 @@ fn progressive_handle(mut stream: TcpStream, handlers: HashMap<String, WhiskyHan
         Ok(sr) => sr,
         Err(e) => { println!("The request is not in utf8: {}", e); String::from("")}
     };
-    println!("The wholeResquest\n{:?}\nTHEEND", string_header)
+    println!("The wholeResquest\n{:?}\nTHEEND", string_header);
+    string_header
+
 }
 
-fn parse_header(mut stream: TcpStream) -> (String, TcpStream){
+fn parse_header(mut stream: &TcpStream) -> String {
     stream.set_read_timeout(Some(Duration::from_millis(1))).unwrap();
     let mut request = Vec::new();
     match stream.read_to_end(&mut request) {
@@ -177,12 +179,12 @@ fn parse_header(mut stream: TcpStream) -> (String, TcpStream){
         Ok(sr) => sr,
         Err(e) => { println!("The request is not in utf8: {}", e); String::from("")}
     };
-    (string_request, stream)
+    string_request
 }
 
 fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
     // println!("handling request");
-    let (string_request, stream) = parse_header(stream);
+    let string_request = parse_header(&stream);
 
 
     let context = Context::new(string_request, stream);

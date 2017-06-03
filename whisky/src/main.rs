@@ -1,8 +1,6 @@
 use std::{thread};
-use std::io::ErrorKind;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
-use std::time::Duration;
 use std::string::String;
 use std::collections::HashMap;
 
@@ -21,7 +19,7 @@ fn ping_handler(c: Context) {
     let mut output = c.output;
     match output.write(b"{\"value\",\"pong\"}\n") {
         Ok(_) => (),
-        Err(e) => println!("There was some issue writing a result")
+        Err(e) => println!("There was some issue writing a result: {}", e)
     }
 }
 
@@ -119,10 +117,10 @@ impl Context {
     }
 }
 
-fn parse_header(mut stream: &TcpStream) -> String {
-    let mut found_CRLF = 0;
+fn parse_header(stream: &TcpStream) -> String {
+    let mut found_crlf = 0;
     // goes "even" "odd" depending on wether CR was the last found true (odd) or LF was found false (even)
-    let mut last_found_CR = false;
+    let mut last_found_cr = false;
     let mut header = Vec::new();
         
     for res in stream.bytes() {
@@ -130,17 +128,18 @@ fn parse_header(mut stream: &TcpStream) -> String {
             Ok(b) => {
                 header.push(b);
                 if b == 13 {
-                    last_found_CR = true;
+                    last_found_cr = true;
                 } else if b == 10 {
-                    if last_found_CR {
-                       found_CRLF += 1;
+                    if last_found_cr {
+                       found_crlf += 1;
                     }
-                    last_found_CR = false;
+                    last_found_cr = false;
                 } else {
-                    found_CRLF = 0;
+                    // the number of found crlfs need to be the number of consecutive crlf's
+                    found_crlf = 0;
                     println!("Have a byte {:?}", b)
                 }
-                if found_CRLF == 2 {
+                if found_crlf == 2 {
                     println!("End of Header");
                     break
                 }
@@ -156,7 +155,7 @@ fn parse_header(mut stream: &TcpStream) -> String {
 
 }
 
-fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
+fn handle_client(stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
     // println!("handling request");
     let string_request = parse_header(&stream);
 

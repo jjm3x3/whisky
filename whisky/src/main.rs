@@ -49,8 +49,8 @@ impl Whisky {
                 Ok(stream) => {
                     let handlers = self.handlers.clone();
                     thread::spawn(move || {
-                        // handle_client(stream, handlers);
-                        progressive_handle(stream, handlers)
+                        handle_client(stream, handlers);
+                        // progressive_handle(stream, handlers)
                     });
                 }
                 Err(e) => panic!("an error has occured {}", e)
@@ -152,15 +152,14 @@ fn progressive_handle(mut stream: TcpStream, handlers: HashMap<String, WhiskyHan
             Err(e) => println!("There was an erro matchin on a byte: {}", e)
         }
     }
-    let string_request = match String::from_utf8(header){
+    let string_header = match String::from_utf8(header){
         Ok(sr) => sr,
         Err(e) => { println!("The request is not in utf8: {}", e); String::from("")}
     };
-    println!("The wholeResquest\n{:?}\nTHEEND", string_request)
+    println!("The wholeResquest\n{:?}\nTHEEND", string_header)
 }
 
-fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
-    // println!("handling request");
+fn parse_header(mut stream: TcpStream) -> (String, TcpStream){
     stream.set_read_timeout(Some(Duration::from_millis(1))).unwrap();
     let mut request = Vec::new();
     match stream.read_to_end(&mut request) {
@@ -178,6 +177,12 @@ fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>
         Ok(sr) => sr,
         Err(e) => { println!("The request is not in utf8: {}", e); String::from("")}
     };
+    (string_request, stream)
+}
+
+fn handle_client(mut stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
+    // println!("handling request");
+    let (string_request, stream) = parse_header(stream);
 
 
     let context = Context::new(string_request, stream);

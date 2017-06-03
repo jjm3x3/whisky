@@ -48,7 +48,6 @@ impl Whisky {
                     let handlers = self.handlers.clone();
                     thread::spawn(move || {
                         handle_client(stream, handlers);
-                        // progressive_handle(stream, handlers)
                     });
                 }
                 Err(e) => panic!("an error has occured {}", e)

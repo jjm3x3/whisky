@@ -1,4 +1,5 @@
-use std::{thread};
+use std::{thread, result};
+use std::io;
 use std::io::prelude::*;
 use std::net::{TcpListener, TcpStream};
 use std::string::String;
@@ -14,13 +15,10 @@ fn main () {
     
 }
 
-fn ping_handler(c: Context) {
+fn ping_handler(c: Context) -> io::Result<usize> {
     println!("I have been routed and now I just need to be handled");
     let mut output = c.output;
-    match output.write(b"{\"value\",\"pong\"}\n") {
-        Ok(_) => (),
-        Err(e) => println!("There was some issue writing a result: {}", e)
-    }
+    Ok(output.write(b"{\"value\",\"pong\"}\n")?)
 }
 
 struct Whisky {
@@ -29,7 +27,7 @@ struct Whisky {
     handlers: HashMap<String, WhiskyHandler >
 }
 
-type WhiskyHandler = fn(Context) -> ();
+type WhiskyHandler = fn(Context) -> io::Result<usize>;
 
 impl Whisky {
     fn new(port: &str) -> Whisky {
@@ -136,10 +134,10 @@ fn parse_header(stream: &TcpStream) -> String {
                 } else {
                     // the number of found crlfs need to be the number of consecutive crlf's
                     found_crlf = 0;
-                    println!("Have a byte {:?}", b)
+                    // println!("Have a byte {:?}", b)
                 }
                 if found_crlf == 2 {
-                    println!("End of Header");
+                    // println!("End of Header");
                     break
                 }
             }
@@ -154,7 +152,7 @@ fn parse_header(stream: &TcpStream) -> String {
 
 }
 
-fn handle_client(stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
+fn handle_client(stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) -> io::Result<usize>{
     // println!("handling request");
     let string_request = parse_header(&stream);
 
@@ -165,15 +163,15 @@ fn handle_client(stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) {
     if handlers.contains_key(&context.url) {
         match handlers.get(&context.url) {
             Some(handler) => handler(context),
-            None => println!("Something went terribly wrong getting a handler for {}", context.url)
+            None => {
+                let message = format!("Something went terribly wrong getting a handler for {}", context.url);
+                println!("{}", message);
+                Err(io::Error::new(io::ErrorKind::NotFound, message))
+            }
         }
     } else {
-        // println!("key not found in:\n {:?}", handlers);
         let mut output = context.output;
-        match output.write(b"404 page not found") {
-            Ok(_/*bytes_written*/) => (),
-            Err(e) => println!("Error while writing result: {}", e)
-        };
+        Ok(output.write(b"404 page not found")?)
     }
 
 }

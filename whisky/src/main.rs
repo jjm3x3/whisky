@@ -15,6 +15,15 @@ fn main () {
     
 }
 
+
+type WhiskyResult<T>  = std::result::Result<T, WhiskyError>;
+
+enum WhiskyError {
+    Error,
+}
+
+
+
 fn ping_handler(c: Context) -> io::Result<usize> {
     println!("I have been routed and now I just need to be handled");
     let mut output = c.output;

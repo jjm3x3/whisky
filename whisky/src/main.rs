@@ -17,7 +17,7 @@ fn main () {
 fn ping_handler(c: Context) {
     println!("I have been routed and now I just need to be handled");
     let mut output = c.output;
-    match output.write(b"{\"value\",\"pong\"}\n") {
+    match output.write(b"{\"value\",\"pong\"}") {
         Ok(_) => (),
         Err(e) => println!("There was some issue writing a result: {}", e)
     }
@@ -122,6 +122,9 @@ fn parse_header(stream: &TcpStream) -> String {
     let mut last_found_cr = false;
     let mut header = Vec::new();
         
+// should respond with 400 if the request line is malformed
+// should return a 501 if the method is longer than any implemented one
+// if the target is "too" long should respond with a 414 too long
     for res in stream.bytes() {
         match res {
             Ok(b) => {

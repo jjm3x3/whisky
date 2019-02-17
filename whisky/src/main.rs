@@ -24,7 +24,7 @@ enum WhiskyError {
 
 
 
-fn ping_handler(c: Context) -> io::Result<usize> {
+fn ping_handler(c: Context) -> WhiskyResult<usize> {
     println!("I have been routed and now I just need to be handled");
     let mut output = c.output;
     Ok(output.write(b"{\"value\",\"pong\"}\n")?)
@@ -36,7 +36,7 @@ struct Whisky {
     handlers: HashMap<String, WhiskyHandler >
 }
 
-type WhiskyHandler = fn(Context) -> io::Result<usize>;
+type WhiskyHandler = fn(Context) -> WhiskyResult<usize>;
 
 impl Whisky {
     fn new(port: &str) -> Whisky {
@@ -161,7 +161,7 @@ fn parse_header(stream: &TcpStream) -> String {
 
 }
 
-fn handle_client(stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) -> io::Result<usize>{
+fn handle_client(stream: TcpStream, handlers: HashMap<String, WhiskyHandler>) -> WhiskyResult<usize>{
     // println!("handling request");
     let string_request = parse_header(&stream);
 
